@@ -47,7 +47,7 @@ def get_authenticated_service():
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRETS_FILE, SCOPES)
-            creds = flow.run_local_server(port=8080)
+            creds = flow.run_local_server(port=8080, prompt='consent')
             with open(TOKEN_FILE, "w") as token:
                 token.write(creds.to_json())
 
@@ -69,6 +69,20 @@ def get_twitch_access_token():
 
 TWITCH_ACCESS_TOKEN = get_twitch_access_token()
 
+def get_game_name(game_id):
+    url = "https://api.twitch.tv/helix/games"
+    headers = {
+        "Client-ID": TWITCH_CLIENT_ID,
+        "Authorization": f"Bearer {TWITCH_ACCESS_TOKEN}"
+    }
+    params = {"id": game_id}
+    response = requests.get(url, headers=headers, params=params)
+    response.raise_for_status()
+    data = response.json()["data"]
+    if data and "name" in data[0]:
+        return data[0]["name"]
+    return "Unknown Game"
+
 
 def get_latest_twitch_vods():
     """Fetch the latest VODs from the Twitch API."""
@@ -78,29 +92,23 @@ def get_latest_twitch_vods():
         "Authorization": f"Bearer {TWITCH_ACCESS_TOKEN}"
     }
     params = {"user_id": config["twitch_user_id"], "type": "archive"}
+
     response = requests.get(url, headers=headers, params=params)
     response.raise_for_status()
     vods = response.json()["data"]
 
     for vod in vods:
         game_id = vod.get("game_id")
-        vod["game_name"] = get_game_name(game_id) if game_id else "Unknown Game"
+        if game_id:
+            game_name = get_game_name(game_id)
+        else:
+            game_name = "Unknown Game"
+        vod["game_name"] = game_name
+
+        print(f"VOD ID: {vod['id']} - Game Name: {vod['game_name']}")
+
 
     return vods
-
-
-def get_game_name(game_id):
-    """Fetch the name of the game associated with a game ID."""
-    url = "https://api.twitch.tv/helix/games"
-    headers = {
-        "Client-ID": TWITCH_CLIENT_ID,
-        "Authorization": f"Bearer {TWITCH_ACCESS_TOKEN}"
-    }
-    params = {"id": game_id}
-    response = requests.get(url, headers=headers, params=params)
-    response.raise_for_status()
-    data = response.json().get("data", [])
-    return data[0].get("name", "Unknown Game") if data else "Unknown Game"
 
 
 def load_cache():
