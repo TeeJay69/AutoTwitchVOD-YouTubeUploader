@@ -1,0 +1,12 @@
+{
+    "twitch_client_id": "your_twitch_client_id",
+    "twitch_client_secret": "your_twitch_client_secret",
+    "twitch_user_id": "your_twitch_user_id",
+    "youtube_client_secrets_file": "client_secret.json",
+    "youtube_channel_id": "your_channel_id",
+    "recordings_dir": "C:/path/to/your/recordings",
+    "schedule_task": false,
+    "_comment_task_frequency": "Options: daily, weekly, hourly",
+    "task_frequency": "daily"
+  }
+  
